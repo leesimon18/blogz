@@ -2,17 +2,16 @@
 
 <html>
 	<head>
-		<title>Blogz</title>
-		<link type="type/css" rel="stylesheet" href="style/stylesheet.css"/>
+		<link type="type/css" rel="stylesheet" href="stylesheet.css"/>
 	</head>
+	<title>Blogz</title>
 	<body>
 		<h1>Welcome to Blogz!</h1>
 		<a href="/">home</a>
-		<a href="/">all posts</a>
-		<a href="/">new post</a>
-		
+		<a href="/all_posts">all posts</a>
+		<a href="/new_post">new post</a>
 		<a href="/login">login</a>
-		<a href="/">logout</a>
+		<a href="/logout">logout</a>
 		{% block content %}
 		{% endblock %}
 	</body>
