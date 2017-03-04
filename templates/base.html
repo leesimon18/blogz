@@ -7,11 +7,16 @@
 	<title>Blogz</title>
 	<body>
 		<h1>Welcome to Blogz!</h1>
-		<a href="/">home</a>
-		<a href="/all_posts">all posts</a>
-		<a href="/new_post">new post</a>
-		<a href="/login">login</a>
-		<a href="/logout">logout</a>
+		<table>
+			<tr>
+				<td><a href="/">home</a></td>
+				<td><a href="/all_posts">all posts</a></td>
+				<td><a href="/new_post">new post</a></td>
+				<td></td>
+				<td><a href="/login">login</a></td>
+				<td><a href="/logout">logout</a></td>
+			</tr>
+		</table>
 		{% block content %}
 		{% endblock %}
 	</body>

@@ -21,11 +21,13 @@ import re
 import fnmatch
 from google.appengine.ext import db
 from datetime import datetime, timedelta
+import time
 
 template_dir = os.path.join(os.path.dirname(__file__), 'templates')
 jinja_env = jinja2.Environment(loader=jinja2.FileSystemLoader(template_dir), autoescape=True)
 
-allowed_routes = ["/", "/login", "/signup", "/all_posts"]
+allowed_routes = ["/new_post"]
+# allowed_routes = ["/", "/login", "/signup", "/all_posts", "/blog/<id:\d+>"]
 
 class Handler(webapp2.RequestHandler):
     def write(self, *a, **kw):
@@ -40,7 +42,7 @@ class Handler(webapp2.RequestHandler):
         uid = self.read_secure_cookie('user_id')
         self.user = uid and User.get_by_id(int(uid))
 
-        if not self.user and self.request.path not in allowed_routes:
+        if not self.user and self.request.path in allowed_routes:
             self.redirect('/login')
             return
 
@@ -62,22 +64,17 @@ class Handler(webapp2.RequestHandler):
         cookie_val = val
         self.response.headers.add_header('Set-Cookie', '%s=%s; Path=/' % (name, cookie_val))
 
-    def get_user_by_name(self, username):
-        user = db.GqlQuery("SELECT * FROM User WHERE uname = '%s'" % username)
-        if user:
-            return user.get()
-
     def logout_user(self):
         self.set_secure_cookie('user_id', '')
 
 class MainHandler(Handler):
-    def render_front(self):
+    def render_front(self, user=""):
         blogs = db.GqlQuery("SELECT * FROM User ORDER BY created DESC")
-        self.render("home.html", blogs=blogs)
+        self.render("home.html", blogs=blogs, user=user)
 
 
     def get(self):
-        self.render_front()
+        self.render_front(user = self.get_user_by_name)
 
 
 class Login(Handler):
@@ -135,6 +132,11 @@ class Signup(Handler):
         errors = {}
         email_check = "*@*.*"
         error_check = False
+
+        user_name = self.get_user_by_name(uname)
+        if user_name:
+            errors["error_existing_uname"] = "Existing Username. Please create a different Username."
+            error_check = True
         if not (uname and self.uname_check.match(uname)):
             errors["error_uname"] = "Please enter a valid user name"
             error_check = True
@@ -152,8 +154,10 @@ class Signup(Handler):
         else:
             a = User(uname=uname, pw=pw, email=email)
             a.put()
-            self.login_user(user)
-            self.response.headers.add_header()
+            self.login_user(a)
+            time.sleep(1)
+            self.redirect("/")
+            # self.response.headers.add_header()
             # self.write("You have successfully signed up!")
 
 class User(db.Model):
@@ -187,9 +191,10 @@ class NewPost(Handler):
         if title and blog:
             a = Blog(title=title, blog=blog, created_by=user_id, created=created)
             a.put()
-            # self.redirect("/")
-            msg = "You have successfully submitted a new post!"
-            self.render_front(msg)
+            time.sleep(1)
+            self.redirect("/")
+            # msg = "You have successfully submitted a new post!"
+            # self.render_front(msg)
         else:
             error = "Submit a title and blog post."
             self.render_front(error, msg, entry_title, entry_blog)
@@ -202,10 +207,13 @@ class Logout(Handler):
 
 class ViewPostHandler(Handler):
     def render_blog(self, id=""):
+        # for b in db.GqlQuery("SELECT * FROM User"):
+        #     for a in db.GqlQuery("SELECT * FROM Blog WHERE ID")
         blogs = db.GqlQuery("SELECT * FROM Blog Where created_by = '%s'"
                             " ORDER BY created DESC LIMIT 5" % id)
-
-        self.render("blog.html", blogs=blogs, id=id)
+        users = db.GqlQuery("SELECT * FROM User Where __key__ = KEY('User', " + id + ")")
+        u = users.get()
+        self.render("blog.html", blogs=blogs, id=id, users=u.uname)
         # self.write(id)
 
     def get(self, id):
@@ -217,11 +225,23 @@ class AllPosts(Handler):
 
         blogs = db.GqlQuery("SELECT * FROM Blog"
                             " ORDER BY created DESC LIMIT 5")
-
-        self.render("all_posts.html", blogs=blogs)
+        users = db.GqlQuery("SELECT * FROM User")
+        self.render("all_posts.html", blogs=blogs, users=users)
 
     def get(self):
         self.render_allposts()
+
+class ViewSinglePost(Handler):
+    def render_blog(self, id=""):
+        blogs = db.GqlQuery("SELECT * FROM Blog Where __key__  = KEY('Blog', " + id + ")")
+        b = blogs.get()
+        users = db.GqlQuery("SELECT * FROM User Where __key__ = KEY('User', " + b.created_by + ")")
+        u = users.get()
+        self.render("blog.html", blogs=blogs, id=id, users=u.uname)
+        # self.write("test")
+
+    def get(self, id):
+        self.render_blog(id)
 
 
 app = webapp2.WSGIApplication([
@@ -231,6 +251,6 @@ app = webapp2.WSGIApplication([
     ('/new_post', NewPost),
     ('/logout', Logout),
     ('/all_posts', AllPosts),
-    webapp2.Route('/blog/<id:\d+>', ViewPostHandler)
-
+    webapp2.Route('/blog/<id:\d+>', ViewPostHandler),
+    webapp2.Route('/post/<id:\d+>', ViewSinglePost)
 ], debug=True)

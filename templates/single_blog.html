@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+	
+{% block content %}
+
+	{% for blog in blogs %}
+		<form method="post">
+			<div class="blog">
+			<br>
+			<h2><div class="blog-title">{{blog.title}} -- Posted: {{blog.created.strftime('%m-%d-%Y %I:%M %p')}}</div></h2>
+				<pre class="blog-body">{{blog.blog}}</pre>
+			</div>
+			<font size="2">written by <i><a href="/blog/{{user.key().id()}}">{{users}}</a></i></font>
+		</form>
+	{% endfor %}
+{% endblock %}

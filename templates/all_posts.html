@@ -6,9 +6,18 @@
 		<form method="post">
 			<div class="blog">
 			<br>
-			<h2><div class="blog-title">{{blog.title}} -- Posted: {{blog.created.strftime('%m-%d-%Y %I:%M %p')}}</div></h2>
+			<h2><div class="blog-title"><a href="/post/{{blog.key().id()}}">{{blog.title}}</a> -- Posted: {{blog.created.strftime('%m-%d-%Y %I:%M %p')}}</div></h2>
 				<pre class="blog-body">{{blog.blog}}</pre>
 			</div>
 		</form>
+		{% for user in users %}
+			{% if user.key().id() == blog.created_by|int %}
+			<font size="2">written by <i><a href="/blog/{{user.key().id()}}">{{user.uname}}</a></i></font>
+			{% endif %}
+<!-- 		<p>{{user.key().id()}}</p>
+		<p>{{blog.created_by}}</p>
+ -->			
+		{% endfor %}
+
 	{% endfor %}
 {% endblock %}
